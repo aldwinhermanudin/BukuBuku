@@ -82,7 +82,7 @@ Phase 3 focused on hardware. Schematic design, first iteration of the board, dev
 ### SPI Kernel Driver
 -  [Using MCP3008 ADCs with Raspberry Pis](https://jumpnowtek.com/rpi/Using-mcp3008-ADCs-with-Raspberry-Pis.html)
 -  [linux/mcp320x.c at master · torvalds/linux](https://github.com/torvalds/linux/blob/master/drivers/iio/adc/mcp320x.c)
--  [Writing an RTC Driver Based on the SPI Bus](https://opensourceforu.com/2014/09/writing-an-rtc-driver-based-on-the-spi-bus/
+-  [Writing an RTC Driver Based on the SPI Bus](https://opensourceforu.com/2014/09/writing-an-rtc-driver-based-on-the-spi-bus/)
 -  [DS1347T+T&R Maxim Integrated | Integrated Circuits (ICs) | DigiKey](https://www.digikey.com/product-detail/en/maxim-integrated/DS1347T-T-R/DS1347T-T-RTR-ND/2776906)
 -  [linux/rtc-ds1347.c at master · torvalds/linux](https://github.com/torvalds/linux/blob/master/drivers/rtc/rtc-ds1347.c)
 -  [https://www.sparkfun.com/products/10160](https://www.sparkfun.com/products/10160)

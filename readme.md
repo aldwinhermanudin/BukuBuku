@@ -28,6 +28,42 @@ Phase 2 focused code optimization and testing it on the final chip
 ### Phase 3
 Phase 3 focused on hardware. Schematic design, first iteration of the board, develop sleep-mode for the device, device's power management.
 
+## The Idea
+
+### Assumption
+#### Hardware
+- [Waveshare 7.8inch](https://www.amazon.com/Waveshare-HAT-Resolution-Interface-Controller/dp/B07VL8Y3CQ/ref=sr_1_1?dchild=1&keywords=waveshare%2B9.7&qid=1592326366&sr=8-1&th=1)
+
+
+### Architecture
+![Architecture Diagram](https://raw.githubusercontent.com/aldwinhermanudin/BukuBuku/master/docs/resources/images/idea.png)
+
+#### User Space
+ There are 2 way to display ebooks:
+- Qt Application
+	- create Qt application that can render ebooks    
+	- add file manager to move between books    
+	- possibly uses Qt for Embedded    
+- Framebuffer Application
+	- used for initial PoC    
+	- possibly uses [aligrudi/fbpdf](https://github.com/aligrudi/fbpdf)
+
+#### Kernel Space
+- Framebuffer
+	- create framebuffer driver for the e-Paper display
+	- handles partial/full refresh    
+	- any display optimization happens here    
+	- handles SPI communication  
+- SPI Subsystem
+	- Internally will be called when the framebuffer uses SPI library 
+
+#### Hardware
+- Panel Driver
+	- the driver that translate SPI communication to the e-Paper signal
+	- in Phase 1 would be [IT8951](http://www.waveshare.net/w/upload/1/18/IT8951_D_V0.2.4.3_20170728.pdf)
+- e-Paper Panel
+	- raw display panel without any driver chip
+	- in Phase 1 would be [Waveshare 7.8 inch](https://www.waveshare.com/7.8inch-e-paper.htm)
   
 ## Links
 

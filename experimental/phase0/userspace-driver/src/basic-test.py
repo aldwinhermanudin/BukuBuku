@@ -42,7 +42,7 @@ class IODriver:
         self.GPIO.setup(self.DC_PIN, self.GPIO.OUT)
         self.GPIO.setup(self.CS_PIN, self.GPIO.OUT)
         self.GPIO.setup(self.BUSY_PIN, self.GPIO.IN)
-        self.SPI.max_speed_hz = 4000000
+        self.SPI.max_speed_hz = 1000000
         self.SPI.mode = 0b00
         return 0
 
@@ -82,10 +82,10 @@ class EPDDriver:
 
     # if DC = LOW means sending command
     def send_command(self, command):
-        iodriver.digital_write(self.dc_pin, 0) # set DC to HIGH
-        iodriver.digital_write(self.cs_pin, 0) # set CS to HIGH to stop sending data to SPI
+        iodriver.digital_write(self.dc_pin, 0) # set DC to LOW
+        iodriver.digital_write(self.cs_pin, 0) # set CS to LOW to start sending data to SPI
         iodriver.spi_writebyte([command])
-        iodriver.digital_write(self.cs_pin, 1)
+        iodriver.digital_write(self.cs_pin, 1) # set CS to HIGH to stop sending data to SPI
 
 
     # if DC = HIGH means sending data

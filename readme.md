@@ -5,8 +5,8 @@ BukuBuku is an Open Source eReader project inspired by [The Open Book Project](h
 
 ## To do
 
-### Phase 1
-Phase 1 is mainly PoC and early development of the e-paper display driver
+### Phase 0
+Phase 0 is mainly PoC and early development of the e-paper display driver
 - [ ] write driver for e-paper display
 	- [ ] learn how to write kernel driver
 	- [ ] create simple SPI driver ( for RTC chip or small e-paper display )
@@ -22,11 +22,11 @@ Phase 1 is mainly PoC and early development of the e-paper display driver
 	- [ ] test on e-paper display
 - [ ] create initial Qt program for e-reader
 
-### Phase 2
-Phase 2 focused code optimization and testing it on the final chip
+### Phase 1
+Phase 1 focused code optimization and testing it on the final chip
 
-### Phase 3
-Phase 3 focused on hardware. Schematic design, first iteration of the board, develop sleep-mode for the device, device's power management.
+### Phase 2
+Phase 2 focused on hardware. Schematic design, first iteration of the board, develop sleep-mode for the device, device's power management.
 
 ## The Idea
 

@@ -90,6 +90,26 @@ Phase 2 focused on hardware. Schematic design, first iteration of the board, dev
 -  [Writing a Linux Kernel Module — Part 1: Introduction | derekmolloy.ie](http://derekmolloy.ie/writing-a-linux-kernel-module-part-1-introduction/)
 -  [Linux Device Drivers Training 06, Simple Character Driver - YouTube](https://www.youtube.com/watch?v=E_xrzGlHbac)
 -  [How to build a Linux loadable kernel module that Rickrolls people](https://www.youtube.com/watch?v=CWihl19mJig)
+- [The Beginner’s Guide to Linux Kernel Module, Raspberry Pi and LED Matrix · Puddle Of Code](https://puddleofcode.com/story/the-beginners-guide-to-linux-kernel-module-raspbery-pi-and-led-matrix)
+- [GPIO Programming: Using the sysfs Interface | ICS](https://www.ics.com/blog/gpio-programming-using-sysfs-interface)
+- [RPi BCM2835 GPIOs - eLinux.org](https://elinux.org/RPi_BCM2835_GPIOs)
+- [The Linux Kernel Module Programming Guide](http://www.tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN121)
+- [SPI Use — Firefly Wiki](http://wiki.t-firefly.com/en/Firefly-RK3288/driver_spi.html)
+- [Linux Driver Tutorial: How to Write a Simple Linux Device Driver](https://www.apriorit.com/dev-blog/195-simple-driver-for-linux-os)
+- [Introduction-to-Linux-Kernel-Driver-Programming-Michael-Opdenacker-Bootlin-.pdf](https://events19.linuxfoundation.org/wp-content/uploads/2017/12/Introduction-to-Linux-Kernel-Driver-Programming-Michael-Opdenacker-Bootlin-.pdf)
+
+### Device Tree 101
+- [Warning messages from dtc - Raspberry Pi Forums](https://www.raspberrypi.org/forums/viewtopic.php?t=172342)
+- [Device Trees, overlays, and parameters - Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/configuration/device-tree.md)
+- [Device Tree for Dummies](https://bootlin.com/pub/conferences/2014/elc/petazzoni-device-tree-dummies/petazzoni-device-tree-dummies.pdf)
+- [rpi_elecfreaks_22_tft_dt_overlay/elecfreaks_22_tft.dts at master · philenotfound/rpi_elecfreaks_22_tft_dt_overlay](https://github.com/philenotfound/rpi_elecfreaks_22_tft_dt_overlay/blob/master/elecfreaks_22_tft.dts)
+- [linux/media-center-overlay.dts at rpi-4.9.y · raspberrypi/linux](https://github.com/raspberrypi/linux/blob/rpi-4.9.y/arch/arm/boot/dts/overlays/media-center-overlay.dts)
+- [sainsmart32-dtoverlay/sainsmart32-overlay.dts at master · Flugtiger/sainsmart32-dtoverlay](https://github.com/Flugtiger/sainsmart32-dtoverlay/blob/master/src/sainsmart32-overlay.dts)
+- [linux/adafruit13m-overlay.dts at 3d61a22b05cbf7ac2f6b620dcd45c2fb49fb9442 · kenrestivo/linux](https://github.com/kenrestivo/linux/blob/3d61a22b05cbf7ac2f6b620dcd45c2fb49fb9442/arch/arm/boot/dts/overlays/adafruit13m-overlay.dts)
+- [FBTFT RPI overlays · notro/fbtft Wiki](https://github.com/notro/fbtft/wiki/FBTFT-RPI-overlays)
+- [epd/rpi-epd-overlay.dts at master · repk/epd](https://github.com/repk/epd/blob/master/rpi/rpi-epd-overlay.dts)
+- [How to add DT support for a driver - i.MXDev Blog](https://imxdev.gitlab.io/tutorial/How_to_add_DT_support_for_a_driver/)
+- [dev_get_platdata understanding](https://nikhilchaubey.blogspot.com/2018/05/devgetplatdata-understanding.html)
 
 ### e-paper Driver/Framebuffer Projects
 -  [e-ink · GitHub Topics](https://github.com/topics/e-ink)

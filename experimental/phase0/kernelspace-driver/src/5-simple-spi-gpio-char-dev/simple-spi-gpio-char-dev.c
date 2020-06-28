@@ -18,21 +18,23 @@
 #include <linux/fs.h>             // Header for the Linux file system support
 #include <linux/uaccess.h>          // Required for the copy to user function
 
-#define  DEVICE_NAME "ebbchar"    ///< The device will appear at /dev/ebbchar using this value
-#define  CLASS_NAME  "ebb"        ///< The device class -- this is a character device driver
+#define  DEVICE_NAME "ws2in13bchar"    ///< The device will appear at /dev/ebbchar using this value
+#define  CLASS_NAME  "ws2in13b"        ///< The device class -- this is a character device driver
 
 #define ERR(...) pr_err("epd: "__VA_ARGS__)
 
 static int    majorNumber;                  ///< Stores the device number -- determined automatically
 static int    numberOpens = 0;              ///< Counts the number of times the device is opened
-static struct class*  ebbcharClass  = NULL; ///< The device-driver class struct pointer
-static struct device* ebbcharDevice = NULL; ///< The device-driver device struct pointer
+static struct class*  ws12in13_class  = NULL; ///< The device-driver class struct pointer
+static struct device* ws12in13_device = NULL; ///< The device-driver device struct pointer
 
 // The prototype functions for the character driver -- must come before the struct definition
 static int     dev_open(struct inode *, struct file *);
 static int     dev_release(struct inode *, struct file *);
 static ssize_t dev_read(struct file *, char *, size_t, loff_t *);
 static ssize_t dev_write(struct file *, const char *, size_t, loff_t *);
+
+static struct spi_device *ws12in13_spi;
 
 static struct file_operations fops =
 {
@@ -125,6 +127,7 @@ static int ws2in13b_probe(struct spi_device *spi){
 	unsigned char buf;
 	struct ws2in13b_platform_data *pdata, data;
 
+	/* setup SPI */
 	spi->mode = SPI_MODE_0;
 	spi->bits_per_word = 8;
 	spi->max_speed_hz = 1*1000*1000;
@@ -141,6 +144,7 @@ static int ws2in13b_probe(struct spi_device *spi){
 		return ret;
 	}
 
+	/* fetch data from DT */
 	/*
 	 * Get platform data in order to get all gpios config for busy, d/c, and reset.
 	 * if not found fetch it from dt.
@@ -154,15 +158,17 @@ static int ws2in13b_probe(struct spi_device *spi){
 			return ret;
 		}
 	}
-
+	gpio_data = data;
 	printk(KERN_INFO "D/C Pin is %d\n", data.gpio_dc);
 	printk(KERN_INFO "Busy Pin is %d\n", data.gpio_busy);
 	printk(KERN_INFO "Reset Pin is %d\n", data.gpio_reset);
-
+	/* fetch data from DT */
+	ws12in13_spi = spi;
 	printk(KERN_INFO "Succeeded to setup SPI device\n");
+	/* setup SPI */
 
-	gpio_data = data;
 
+	/* setup character device */
 	printk(KERN_INFO "EBBChar: Initializing the EBBChar LKM\n");
 	// Try to dynamically allocate a major number for the device -- more difficult but worth it
 	majorNumber = register_chrdev(0, DEVICE_NAME, &fops);
@@ -173,24 +179,26 @@ static int ws2in13b_probe(struct spi_device *spi){
 	printk(KERN_INFO "EBBChar: registered correctly with major number %d\n", majorNumber);
 
 	// Register the device class
-	ebbcharClass = class_create(THIS_MODULE, CLASS_NAME);
-	if (IS_ERR(ebbcharClass)){                // Check for error and clean up if there is
+	ws12in13_class = class_create(THIS_MODULE, CLASS_NAME);
+	if (IS_ERR(ws12in13_class)){                // Check for error and clean up if there is
 		unregister_chrdev(majorNumber, DEVICE_NAME);
 		printk(KERN_ALERT "Failed to register device class\n");
-		return PTR_ERR(ebbcharClass);          // Correct way to return an error on a pointer
+		return PTR_ERR(ws12in13_class);          // Correct way to return an error on a pointer
 	}
 	printk(KERN_INFO "EBBChar: device class registered correctly\n");
 
 	// Register the device driver
-	ebbcharDevice = device_create(ebbcharClass, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
-	if (IS_ERR(ebbcharDevice)){               // Clean up if there is an error
-		class_destroy(ebbcharClass);           // Repeated code but the alternative is goto statements
+	ws12in13_device = device_create(ws12in13_class, NULL, MKDEV(majorNumber, 0), NULL, DEVICE_NAME);
+	if (IS_ERR(ws12in13_device)){               // Clean up if there is an error
+		class_destroy(ws12in13_class);           // Repeated code but the alternative is goto statements
 		unregister_chrdev(majorNumber, DEVICE_NAME);
 		printk(KERN_ALERT "Failed to create the device\n");
-		return PTR_ERR(ebbcharDevice);
+		return PTR_ERR(ws12in13_device);
 	}
 	printk(KERN_INFO "EBBChar: device class created correctly\n"); // Made it! device was initialized
+	/* setup character device */
 
+	/* setup gpio */
 	/* setup gpio_dc */
 	if (!gpio_is_valid(gpio_data.gpio_dc)){
 		printk(KERN_INFO "GPIO_TEST: invalid LED GPIO\n");
@@ -210,6 +218,7 @@ static int ws2in13b_probe(struct spi_device *spi){
 	gpio_direction_output(gpio_data.gpio_reset, gpio_status);
 	gpio_export(gpio_data.gpio_reset, false);
 	/* setup gpio_reset */
+	/* setup gpio */
 
 	printk(KERN_INFO "EBBChar: GPIO %d %d initialized\n", gpio_data.gpio_dc, gpio_data.gpio_reset);
 
@@ -242,14 +251,19 @@ module_init(ws2in13b_init);
 
 static __exit void ws2in13b_exit(void)
 {
+	/* destroy SPI */
 	printk(KERN_INFO "De-registering SPI device\n");
 	spi_unregister_driver(&ws2in13b_driver);
+	/* destroy SPI */
 
-	device_destroy(ebbcharClass, MKDEV(majorNumber, 0));     // remove the device
-	class_unregister(ebbcharClass);                          // unregister the device class
-	class_destroy(ebbcharClass);                             // remove the device class
+	/* destroy Character Device */
+	device_destroy(ws12in13_class, MKDEV(majorNumber, 0));     // remove the device
+	class_unregister(ws12in13_class);                          // unregister the device class
+	class_destroy(ws12in13_class);                             // remove the device class
 	unregister_chrdev(majorNumber, DEVICE_NAME);             // unregister the major number
+	/* destroy Character Device */
 
+	/* destroy GPIO */
 	gpio_set_value(gpio_data.gpio_reset, 0);              // Turn the LED off, makes it clear the device was unloaded
 	gpio_unexport(gpio_data.gpio_reset);                  // Unexport the LED GPI
 	gpio_free(gpio_data.gpio_reset);                      // Free the LED GPIO
@@ -257,9 +271,9 @@ static __exit void ws2in13b_exit(void)
 	gpio_set_value(gpio_data.gpio_busy, 0);              // Turn the LED off, makes it clear the device was unloaded
 	gpio_unexport(gpio_data.gpio_busy);                  // Unexport the LED GPI
 	gpio_free(gpio_data.gpio_busy);                      // Free the LED GPIO
+	/* destroy GPIO */
 
 	printk(KERN_INFO "EBBChar: Goodbye from the LKM!\n");
-
 }
 
 
@@ -288,20 +302,24 @@ static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *of
 }
 
 static ssize_t dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-   if ( len > 0 && buffer[0] == '1'){
-      printk(KERN_INFO "EBBChar: Setting GPIO DC to 1 \n");
-      gpio_set_value(gpio_data.gpio_dc, 1);
-      gpio_set_value(gpio_data.gpio_reset, 1);
-	  gpio_status=1;
-   } else if ( len > 0 && buffer[0] == '0') {
-      printk(KERN_INFO "EBBChar: Setting GPIO DC to 0 \n");
-      gpio_set_value(gpio_data.gpio_dc, 0);
-      gpio_set_value(gpio_data.gpio_reset, 0);
-	  gpio_status=0;
-   }
+	int buf = 0;
+	if ( len > 0 && buffer[0] == '1'){
+		printk(KERN_INFO "EBBChar: Setting GPIO DC to 1 \n");
+		gpio_set_value(gpio_data.gpio_dc, 1);
+		gpio_set_value(gpio_data.gpio_reset, 1);
+		gpio_status=1;
+	} else if ( len > 0 && buffer[0] == '0') {
+		printk(KERN_INFO "EBBChar: Setting GPIO DC to 0 \n");
+		gpio_set_value(gpio_data.gpio_dc, 0);
+		gpio_set_value(gpio_data.gpio_reset, 0);
+		gpio_status=0;
+	}
 
-   printk(KERN_INFO "EBBChar: Received %zu characters from the user\n", len);
-   return len;
+	buf = 0x04;
+	spi_write(ws12in13_spi, &buf,1);
+
+	printk(KERN_INFO "EBBChar: Received %zu characters from the user\n", len);
+	return len;
 }
 
 static int dev_release(struct inode *inodep, struct file *filep){

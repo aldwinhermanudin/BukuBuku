@@ -8,8 +8,8 @@ BukuBuku is an Open Source eReader project inspired by [The Open Book Project](h
 ### Phase 0
 Phase 0 is mainly PoC and early development of the e-paper display driver
 - [ ] write driver for e-paper display
-	- [ ] learn how to write kernel driver
-	- [ ] create simple SPI driver ( for RTC chip or small e-paper display )
+	- [x] learn how to write kernel driver
+	- [x] create simple SPI driver ( for RTC chip or small e-paper display )
 	- [ ] create simple character device driver using SPI ( for RTC chip or small e-paper display )
 	- [ ] create simple character device driver using SPI for an e-paper display
 	- [ ] create simple framebuffer driver for an e-paper display

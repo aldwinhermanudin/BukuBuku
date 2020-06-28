@@ -1,0 +1,51 @@
+/*
+ * Device Tree overlay for epd module for raspberry-pi
+ */
+
+/dts-v1/;
+/plugin/; /* allow undefined label references */
+
+/ {
+	compatible = "brcm,bcm2835", "bcrm,bcm2708";
+
+    /* disable spidev */
+	fragment@0 {
+		target = <&spi0>;
+		__overlay__ {
+			status = "okay";
+
+			spidev@0{
+				status = "disabled";
+			};
+
+			spidev@1{
+				status = "disabled";
+			};
+		};
+	};
+        
+	/* enable ws2in13b driver */
+	fragment@1 {
+		target = <&spi0>;
+		__overlay__ {
+            /* needed to avoid dtc warning */
+			#address-cells = <1>;
+			#size-cells = <0>;
+            
+			ws2in13b: ws2in13b@0{
+				compatible = "ws2in13b";
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				spi-max-frequency = <1000000>;
+
+				/* these gpios are for template only */
+				panel_on-gpios = <&gpio 22 0>;
+				reset-gpios = <&gpio 24 0>;
+				border-gpios = <&gpio 14 0>;
+				busy-gpios = <&gpio 17 0>;
+				discharge-gpios = <&gpio 23 0>;
+			};
+		};
+	};
+};

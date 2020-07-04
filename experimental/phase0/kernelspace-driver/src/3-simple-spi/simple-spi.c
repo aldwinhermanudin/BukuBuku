@@ -33,9 +33,6 @@ return 0;
 static int ws2in13b_remove(struct spi_device *spi)
 {
 	printk(KERN_INFO "Removing SPI device\n");
-	// struct rtc_device *rtc = platform_get_drvdata(spi);
-
-	// rtc_device_unregister(rtc);
 	return 0;
 }
 

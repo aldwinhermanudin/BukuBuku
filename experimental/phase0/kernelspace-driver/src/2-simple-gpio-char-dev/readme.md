@@ -1,1 +1,8 @@
-for some reason this module seg fault when rmmod
+- for some reason, if the module is not loaded on boot, on the first insmod-rmmod, it will segfault on the rmmod, this issues roots from experimental #1
+- this character device driver code and GPIO is using Linux Kernel legacy API call
+- source code is based on:
+    - http://derekmolloy.ie/writing-a-linux-kernel-module-part-2-a-character-device/
+- this experiment shows the capability of controling the GPIO using the character device
+    - Setting pin 25 to HIGH is by `printf "1" > /dev/ebbchar`
+    - Setting pin 25 to LOW is by `printf "0" > /dev/ebbchar`
+    - Read the current GPIO status by `head -c 1 /dev/ebbchar`

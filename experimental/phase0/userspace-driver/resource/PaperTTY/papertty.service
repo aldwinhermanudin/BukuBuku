@@ -1,0 +1,18 @@
+[Unit]
+Description=PaperTTY
+DefaultDependencies=no
+
+[Service]
+Type=simple
+KillSignal=SIGINT
+TimeoutStopSec=8
+Restart=on-failure
+
+### Change the paths below to match yours
+WorkingDirectory=/home/pi/code/PaperTTY
+ExecStart=/home/pi/code/PaperTTY/start.sh
+###
+
+[Install]
+WantedBy=sysinit.target
+

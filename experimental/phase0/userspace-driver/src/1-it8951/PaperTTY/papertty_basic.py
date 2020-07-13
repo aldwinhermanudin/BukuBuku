@@ -131,6 +131,7 @@ def display_image(driver, image, stretch=False, no_resize=False, fill_color="whi
             output_image.paste(image, (0, 0))
         else:
             # Scales and pads
+            # add empty area with fill_color if image is not the same size as driver's screen size
             output_image = ImageOps.pad(image, (driver.width, driver.height), color=fill_color)
 
     driver.draw(0, 0, output_image)

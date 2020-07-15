@@ -143,7 +143,8 @@ if __name__ == '__main__':
     controller = PaperTTY(driver="IT8951")
     controller.init_display()
 
-    image_location = "04.bmp"
+    # image_location = "04.bmp"
+    image_location = "test_pano.jpg"
     image = None
     """ Display an image """
     if image_location is None or image_location == '-':

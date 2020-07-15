@@ -5,10 +5,7 @@
  * the overall program to run slow. in the future, should use a smaller and faster
  * library to process images, for quick PoC and readabilty OpenCV should be good
  * 
- * this code is based on PaperTTY library, there are some command that's missing
- * from the original waveshare's IT8951.c code, such as IT8951WaitForDisplayReady()
- * although, the advantage on using that is still unknown.
- * Driver::Clear() also is not implemented yet.
+ * this code is based on PaperTTY library.
  * 
  */
 
@@ -65,9 +62,22 @@
 #define IT8951_MODE_0   0
 #define IT8951_MODE_1   1
 #define IT8951_MODE_2   2
-#define DISPLAY_UPDATE_MODE_GC16  2
 #define IT8951_MODE_3   3
 #define IT8951_MODE_4   4
+
+//Waveform Mode Alias
+// Erases the display and leaves it in a white state regardless of what image
+// data is currently in memory.
+#define DISPLAY_UPDATE_MODE_INIT IT8951_MODE_0 
+// A fast non-flashy update mode that can go from any gray scale color to
+// black or white.
+#define DISPLAY_UPDATE_MODE_DU  IT8951_MODE_1
+// A flashy update mode that can go from any gray scale color to any other
+// gray scale color.
+#define DISPLAY_UPDATE_MODE_GC16  IT8951_MODE_2
+// For more documentation on display update modes see the reference document:
+// http://www.waveshare.net/w/upload/c/c4/E-paper-mode-declaration.pdf
+
 //Endian Type
 #define IT8951_LDIMG_L_ENDIAN   0
 #define IT8951_LDIMG_B_ENDIAN   1
@@ -174,40 +184,167 @@ class DeviceInfo {
 
 class Driver {    
     public:
-        static const Pixel kWidth = 104;
-        static const Pixel kHeight = 212;
-        static const Pixel kTotalPixel = (kWidth/8) * kHeight;
+    
+        const int m_v_com;
+        const Pin m_cs_pin;
+        const Pin m_rst_pin;
+        const Pin m_hrdy_pin;
+
         DeviceInfo m_dev_info;
-        Driver() = default;
-        void Reset();
-        void WriteCommand(Word data_out);
-        void WriteRegister(Word reg_addr, Word data_out);
-        void WriteData(std::vector<Word> data_out);
-        DeviceInfo GetDeviceInfo();
-        Word GetVCom();
-        void SetVCom(Word vcom);
-        void Draw(Pixel x, Pixel y, const cv::Mat& image);
-        std::vector<Word> ConvertPrepareImageBuffer(const cv::Mat& image);
-        void DisplayArea(Pixel x, Pixel y, Pixel width, Pixel height, Byte display_mode);
-        void ReadBusy();
-        void WaitForDisplayReady();
-        void Clear();
-        bool InitializeModule();
-        void DeinitializeModule();
+        Driver( int v_com = 1950, Pin cs = 8, Pin rst = 17, Pin hrdy = 24 ):
+                m_v_com(v_com),
+                m_cs_pin(cs),
+                m_rst_pin(rst),
+                m_hrdy_pin(hrdy){}
+        bool InitializeModule();    // start SPI and initialize the display
+        void DeinitializeModule();  // stop SPI and de-initialize the display
+        void Clear();               // clear the display (set everything to white)
+        void Draw(Pixel x, Pixel y, const cv::Mat& image, Byte display_mode = DISPLAY_UPDATE_MODE_GC16);  // draw image to screen
+        void Reset(); // reset the device
 
     private:
 
-        static const Pin kCsPin = 8; // spi comm handled by the bcm2835 library
-        static const Pin kRstPin = 17;
-        static const Pin kHrdyPin = 24;
-        static const int kVCom = 1950;
+        /* GPIO related control */
+        bool DigitalRead(Pin number);
+        void DigitalWrite(Pin number, bool value);
+        void ReadBusy();
+        void Delay(Millisecond delay);
+        /* GPIO related control */
+
+        /* SPI related control */
         void SpiWrite(Word data_out);
         std::vector<Byte> ReadData(unsigned int size);
         Word ReadData();
-        void DigitalWrite(Pin number, bool value);
-        bool DigitalRead(Pin number);
-        void Delay(Millisecond delay);
+        void WriteCommand(Word data_out);
+        void WriteData(std::vector<Word> data_out);
+        Word ReadRegister(Word reg);
+        void WriteRegister(Word reg_addr, Word data_out);
+        /* SPI related control */
+        
+        /* Method that uses SPI comm */
+        void WaitForDisplayReady();
+        DeviceInfo GetDeviceInfo();
+        Word GetVCom();
+        void SetVCom(Word vcom);
+        /* Method that uses SPI comm */
+
+        /* High-level interface */
+        std::vector<Word> ConvertPrepareImageBuffer(const cv::Mat& image);
+        void DisplayArea(Pixel x, Pixel y, Pixel width, Pixel height, Byte display_mode);
+        /* High-level interface */
 };
+
+bool Driver::InitializeModule(){
+  
+  if (!bcm2835_init()){
+    std::cout << "bcm2835_init failed. Are you running as root??" << std::endl;
+    return false;
+  }
+  if (!bcm2835_spi_begin()){
+    std::cout << "bcm2835_spi_begin failed. Are you running as root??" << std::endl;
+    return false;
+  }
+  bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
+  bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
+  bcm2835_spi_set_speed_hz(2*1000*1000);                        // set to 1 MHz
+  bcm2835_spi_chipSelect(BCM2835_SPI_CS_NONE);                  // Let the library control it manually
+
+  // // Set the m_rst_pin,kDcPin to be an output
+  bcm2835_gpio_fsel(m_rst_pin, BCM2835_GPIO_FSEL_OUTP);
+  bcm2835_gpio_fsel(m_cs_pin, BCM2835_GPIO_FSEL_OUTP); // spi comm handled by the bcm2835 library
+
+  // Set RPI pin kBusyPin to be an input
+  bcm2835_gpio_fsel(m_hrdy_pin, BCM2835_GPIO_FSEL_INPT);
+  bcm2835_gpio_set_pud(m_hrdy_pin, BCM2835_GPIO_PUD_UP); //  with a pullup
+
+  DigitalWrite(m_cs_pin, HIGH);
+
+  // Reset the device to its initial state.
+  Reset();
+
+  // Get the Device Information. Width, Height, Image base addr, FW & LUT version
+  m_dev_info = GetDeviceInfo();
+  m_dev_info.PrintInfo();
+  
+  // Set to Enable I80 Packed mode.
+  WriteRegister(I80CPCR, 0x0001);
+
+  // everytime the display reset-ed, vcom will default to specific volts ( 2.60 in the current firmware )
+  Word current_vcom = GetVCom();
+  printf("Current VCOM = -%.02fV\n",(float)current_vcom/1000);
+	if (m_v_com != current_vcom)
+	{
+		SetVCom(m_v_com);
+		printf("VCOM = -%.02fV\n",(float)GetVCom()/1000);
+	}
+  
+  ReadBusy();
+  Clear();
+
+  return true;
+}
+
+void Driver::DeinitializeModule(){
+  
+  std::cout << "spi end" << std::endl;
+  bcm2835_spi_end();
+  std::cout << "close 5V, Module enters 0 power consumption ..." << std::endl;
+  DigitalWrite(m_rst_pin, LOW);
+  bcm2835_close();
+}
+
+void Driver::Clear(){
+
+  cv::Mat blank(m_dev_info.m_panel_height, m_dev_info.m_panel_width, CV_8UC3, cv::Scalar(255,255,255));
+  Draw(0,0,blank, DISPLAY_UPDATE_MODE_INIT);  
+}
+
+void Driver::Draw(Pixel x, Pixel y, const cv::Mat& image, Byte display_mode){
+  // void Driver::Draw(Pixel x, Pixel y, Pixels image){
+  Pixel width = image.size().width;
+  Pixel height = image.size().height;
+
+  // Set Image Buffer Base Address
+  WaitForDisplayReady();
+
+  WriteRegister(LISAR + 2, m_dev_info.m_img_buf_addr_h );
+  WriteRegister(LISAR, m_dev_info.m_img_buf_addr_l);
+
+  WriteCommand(IT8951_TCON_LD_IMG_AREA);
+  WriteData({ 
+              (Word)
+                (IT8951_LDIMG_L_ENDIAN << 8 ) |
+                (IT8951_4BPP << 4) |
+                (IT8951_ROTATE_0)
+            });
+  WriteData({(Word) x});
+  WriteData({(Word) y});
+  WriteData({(Word) width});
+  WriteData({(Word) height});
+
+  WriteData(ConvertPrepareImageBuffer(image));
+
+  WriteCommand(IT8951_TCON_LD_IMG_END);
+
+  DisplayArea(x,y, width, height, display_mode);
+
+}
+
+void Driver::Reset(){
+  DigitalWrite(m_rst_pin, LOW);
+  Delay(500);
+  DigitalWrite(m_rst_pin, HIGH);
+  Delay(500);
+}
+
+
+bool Driver::DigitalRead(Pin number){
+  return bcm2835_gpio_lev(number);
+}
+
+void Driver::DigitalWrite(Pin number, bool value){
+  bcm2835_gpio_write(number, value);
+}
 
 /* Waits for the busy pin to drop.
  *
@@ -215,22 +352,13 @@ class Driver {
  * commands that are sent to it.
  */
 void Driver::ReadBusy(){
-  while(DigitalRead(kHrdyPin) == LOW){
+  while(DigitalRead(m_hrdy_pin) == LOW){
     Delay(100);
   }
 }
 
-/*
-  Waits for the display to be finished updating.
-
-  It is possible for the controller to be ready for more commands but the
-  display to still be refreshing. This will wait for the display to be
-  stable.
-*/
-void Driver::WaitForDisplayReady(){
-    // while self.read_register(self.REG_LUTAFSR) != 0:
-    //     self.delay_ms(100)
-
+void Driver::Delay(Millisecond delay){
+  bcm2835_delay(delay);
 }
 
 void Driver::SpiWrite(Word data_out){
@@ -244,7 +372,7 @@ std::vector<Byte> Driver::ReadData(unsigned int size){
   std::vector<Byte> ret;
 
   ReadBusy();
-  DigitalWrite(kCsPin,LOW);
+  DigitalWrite(m_cs_pin,LOW);
   SpiWrite(PREAMBLE_SPI_READ);
   ReadBusy();
   SpiWrite(DUMMY_DATA);
@@ -254,7 +382,7 @@ std::vector<Byte> Driver::ReadData(unsigned int size){
     ret.push_back(bcm2835_spi_transfer(DUMMY_DATA));
 	}
 
-  DigitalWrite(kCsPin,HIGH);
+  DigitalWrite(m_cs_pin,HIGH);
 
   return ret;
 }
@@ -267,29 +395,53 @@ Word Driver::ReadData(){
 
 void Driver::WriteCommand(Word data_out){
   ReadBusy();
-  DigitalWrite(kCsPin,LOW); 
+  DigitalWrite(m_cs_pin,LOW); 
   SpiWrite(PREAMBLE_WRITE_CMD);
   ReadBusy();
   SpiWrite(data_out);
-  DigitalWrite(kCsPin,HIGH);
+  DigitalWrite(m_cs_pin,HIGH);
 }
 
 void Driver::WriteData(std::vector<Word> data_out){
 
   ReadBusy();
-  DigitalWrite(kCsPin,LOW);
+  DigitalWrite(m_cs_pin,LOW);
   SpiWrite(DUMMY_DATA);
   ReadBusy();
   for (auto& data : data_out){
     SpiWrite(data);
   }
-  DigitalWrite(kCsPin,HIGH);  
+  DigitalWrite(m_cs_pin,HIGH);  
+}
+
+Word Driver::ReadRegister(Word reg){
+  WriteCommand(IT8951_TCON_REG_RD);
+  WriteData({reg});
+  return ReadData();
 }
 
 void Driver::WriteRegister(Word reg_addr, Word data_out){
   WriteCommand(IT8951_TCON_REG_WR);
   WriteData({reg_addr});
   WriteData({data_out});
+}
+
+
+/*
+  Waits for the display to be finished updating.
+
+  It is possible for the controller to be ready for more commands but the
+  display to still be refreshing. This will wait for the display to be
+  stable.
+*/
+void Driver::WaitForDisplayReady(){
+  while(ReadRegister(LUTAFSR) != 0){
+    Delay(100);
+  }
+
+    // while self.read_register(self.REG_LUTAFSR) != 0:
+    //     self.delay_ms(100)
+
 }
 
 DeviceInfo Driver::GetDeviceInfo(){
@@ -314,25 +466,6 @@ void Driver::SetVCom(Word vcom){
   WriteCommand(USDEF_I80_CMD_VCOM);
   WriteData({0x0001});
   WriteData({vcom});
-}
-
-void Driver::DigitalWrite(Pin number, bool value){
-  bcm2835_gpio_write(number, value);
-}
-
-bool Driver::DigitalRead(Pin number){
-  return bcm2835_gpio_lev(number);
-}
-
-void Driver::Delay(Millisecond delay){
-  bcm2835_delay(delay);
-}
-
-void Driver::Reset(){
-  DigitalWrite(kRstPin, LOW);
-  Delay(500);
-  DigitalWrite(kRstPin, HIGH);
-  Delay(500);
 }
 
 std::vector<Word> Driver::ConvertPrepareImageBuffer(const cv::Mat& image){
@@ -379,36 +512,6 @@ std::vector<Word> Driver::ConvertPrepareImageBuffer(const cv::Mat& image){
   return packed_buffer;
 }
 
-void Driver::Draw(Pixel x, Pixel y, const cv::Mat& image){
-  // void Driver::Draw(Pixel x, Pixel y, Pixels image){
-  Pixel width = image.size().width;
-  Pixel height = image.size().height;
-
-  // Set Image Buffer Base Address
-  ReadBusy();
-  WriteRegister(LISAR + 2, m_dev_info.m_img_buf_addr_h );
-  WriteRegister(LISAR, m_dev_info.m_img_buf_addr_l);
-
-  WriteCommand(IT8951_TCON_LD_IMG_AREA);
-  WriteData({ 
-              (Word)
-                (IT8951_LDIMG_L_ENDIAN << 8 ) |
-                (IT8951_4BPP << 4) |
-                (IT8951_ROTATE_0)
-            });
-  WriteData({(Word) x});
-  WriteData({(Word) y});
-  WriteData({(Word) width});
-  WriteData({(Word) height});
-
-  WriteData(ConvertPrepareImageBuffer(image));
-
-  WriteCommand(IT8951_TCON_LD_IMG_END);
-
-  DisplayArea(x,y, width, height, DISPLAY_UPDATE_MODE_GC16);
-
-}
-
 void Driver::DisplayArea(Pixel x, Pixel y, Pixel width, Pixel height, Byte display_mode){
 
   WriteCommand(USDEF_I80_CMD_DPY_AREA);
@@ -417,67 +520,6 @@ void Driver::DisplayArea(Pixel x, Pixel y, Pixel width, Pixel height, Byte displ
   WriteData({width});
   WriteData({height});
   WriteData({display_mode});
-}
-void Driver::Clear(){
-  
-}
-
-bool Driver::InitializeModule(){
-  
-  if (!bcm2835_init()){
-    std::cout << "bcm2835_init failed. Are you running as root??" << std::endl;
-    return false;
-  }
-  if (!bcm2835_spi_begin()){
-    std::cout << "bcm2835_spi_begin failed. Are you running as root??" << std::endl;
-    return false;
-  }
-  bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
-  bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
-  bcm2835_spi_set_speed_hz(2*1000*1000);                        // set to 1 MHz
-  bcm2835_spi_chipSelect(BCM2835_SPI_CS_NONE);                  // Let the library control it manually
-
-  // // Set the kRstPin,kDcPin to be an output
-  bcm2835_gpio_fsel(kRstPin, BCM2835_GPIO_FSEL_OUTP);
-  bcm2835_gpio_fsel(kCsPin, BCM2835_GPIO_FSEL_OUTP); // spi comm handled by the bcm2835 library
-
-  // Set RPI pin kBusyPin to be an input
-  bcm2835_gpio_fsel(kHrdyPin, BCM2835_GPIO_FSEL_INPT);
-  bcm2835_gpio_set_pud(kHrdyPin, BCM2835_GPIO_PUD_UP); //  with a pullup
-
-  DigitalWrite(kCsPin, HIGH);
-
-  // Reset the device to its initial state.
-  Reset();
-
-  // Get the Device Information. Width, Height, Image base addr, FW & LUT version
-  m_dev_info = GetDeviceInfo();
-  m_dev_info.PrintInfo();
-  
-  // Set to Enable I80 Packed mode.
-  WriteRegister(I80CPCR, 0x0001);
-
-  // everytime the display reset-ed, vcom will default to specific volts ( 2.60 in the current firmware )
-  Word current_vcom = GetVCom();
-  printf("Current VCOM = -%.02fV\n",(float)current_vcom/1000);
-	if (kVCom != current_vcom)
-	{
-		SetVCom(kVCom);
-		printf("VCOM = -%.02fV\n",(float)GetVCom()/1000);
-	}
-
-  return true;
-}
-
-
-void Driver::DeinitializeModule(){
-  
-  std::cout << "spi end" << std::endl;
-  bcm2835_spi_end();
-  std::cout << "close 5V, Module enters 0 power consumption ..." << std::endl;
-  DigitalWrite(kRstPin, LOW);
-  // DigitalWrite(kDcPin, LOW);
-  bcm2835_close();
 }
 
 int main(int argc, char **argv){

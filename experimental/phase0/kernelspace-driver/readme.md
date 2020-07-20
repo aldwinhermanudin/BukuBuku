@@ -19,10 +19,15 @@ for Raspberry Pi downloading the current linux kernel header is by:
 
 ## notes 
 - should refer to experimental #1 for proper character device driver
-- experiment #6 is the final experiment for Waveshare 2in13B. future experiments shuold refer to this first.
+- experiment #6 is the final experiment for Waveshare 2in13B. future experiments should refer to this first.
 
 ## todo
 - [ ] ~~fix segfault on experimental #1, #2 and #5~~ ( for some reason, if the module is not loaded on boot, on the first insmod-rmmod, it will segfault on the rmmod, this is because of the character device )
 - [x] updated experimental #1 with the proper char device driver method
 - [x] finish experimental #5
 - [x] add experimental code #6 to update ws2in13b screen through character device driver
+- [ ] use tindrm_it8951 as the main driver, copy/link tinydrm_it8951 under /driver/tinydrm_it8951 of this project
+- [ ] improve tinydrm_it8951 
+	- [ ] read vcom from device tree
+	- [ ] read spi max speed from device tree
+	- [ ] add support for different e-paper size and resolution

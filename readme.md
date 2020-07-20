@@ -1,7 +1,7 @@
 
 # BukuBuku
 
-BukuBuku is an Open Source eReader project inspired by [The Open Book Project](https://github.com/joeycastillo/The-Open-Book)
+BukuBuku is an Open Source eReader device inspired by [The Open Book Project](https://github.com/joeycastillo/The-Open-Book)
 
 ## To do
 

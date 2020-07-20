@@ -1,0 +1,57 @@
+/*
+ * Device Tree overlay for epd module for raspberry-pi
+ */
+
+/dts-v1/;
+/plugin/; /* allow undefined label references */
+
+/ {
+	compatible = "brcm,bcm2835", "bcrm,bcm2708";
+
+    /* disable spidev */    
+    fragment@0 {
+        target = <&spidev0>;
+        __overlay__ {
+            status = "disabled";
+        };
+    };
+
+	fragment@1 {
+		target = <&gpio>;
+		__overlay__ {
+			it8951_pins: it8951_pins {
+				brcm,pins = <17 24>;
+				brcm,function = <1 0>; /* out in */
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&spi0>;
+		__overlay__ {
+            /* enable spi0, i think */
+			status = "okay";
+
+			/* needed to avoid dtc warning */
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			it8951: it8951@0{
+                /* enable this driver, i think */
+                status = "okay";
+
+				compatible = "it8951";
+				pinctrl-names = "default";
+				pinctrl-0 = <&it8951_pins>;
+
+				reg = <0>;
+				spi-max-frequency = <8000000>;
+
+				rotation = <0>;
+				vcom = <1950>;
+				reset-gpios = <&gpio 17 0>;
+				hrdy-gpios = <&gpio 24 0>;
+			};
+		};
+	};      
+};

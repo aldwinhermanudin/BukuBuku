@@ -26,6 +26,7 @@ for Raspberry Pi downloading the current linux kernel header is by:
 - [x] updated experimental #1 with the proper char device driver method
 - [x] finish experimental #5
 - [x] add experimental code #6 to update ws2in13b screen through character device driver
+- [ ] add resource directory and add a readme.md under it.
 - [ ] use tindrm_it8951 as the main driver, copy/link tinydrm_it8951 under /driver/tinydrm_it8951 of this project
 - [ ] improve tinydrm_it8951 
 	- [ ] read vcom from device tree

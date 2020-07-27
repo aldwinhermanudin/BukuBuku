@@ -1,0 +1,51 @@
+// Waveshare Eink as frame buffer
+#include <dt-bindings/gpio/gpio.h>
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	fragment@0 {
+		target = <&spidev0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+        fragment@1 {
+                target = <&gpio>;
+                __overlay__ {
+                        wseinkfb_pins: wseinkfb_pins {
+                                brcm,pins = <17 24 25>;
+                                brcm,function = <1>; /* out */
+                        };
+                };
+        };
+
+	fragment@2 {
+		target = <&spi0>;
+		__overlay__ {
+			/* needed to avoid dtc warning */
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "okay";
+
+			wseinkfb@0 {
+				compatible = "waveshare,75";
+				reg = <0>; /* CE0 */
+                                pinctrl-names = "default";
+                                pinctrl-0 = <&wseinkfb_pins>;
+				/* spi-max-frequency = <6000000>; */
+				spi-max-frequency = <3125000>;
+				ws,rst-gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+				ws,dc-gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
+				ws,busy-gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+				status = "okay";
+			};
+		};
+	};
+
+};

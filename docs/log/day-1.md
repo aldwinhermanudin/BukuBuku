@@ -8,12 +8,12 @@ Thing I have in mind are:
 
 ## Next Development Step
 The next step are perfectly log  under `experimental/phase0/kernelspace-driver/readme.md`, which are
-	-   add resource directory and add a readme.md under it.
-	-   use tindrm_it8951 as the main driver, copy/link tinydrm_it8951 under /driver/tinydrm_it8951 of this project
-	-   improve tinydrm_it8951
-	    -   read vcom from device tree
-	    -   read spi max speed from device tree
-	    -   add support for different e-paper size and resolution
+  - add resource directory and add a readme.md under it.
+  - use tindrm_it8951 as the main driver, copy/link tinydrm_it8951 under /driver/tinydrm_it8951 of this project
+  - improve tinydrm_it8951
+    - read vcom from device tree
+    - read spi max speed from device tree
+    - add support for different e-paper size and resolution
 
 Thing I want to keep in mind is that I need to finish up `experimental/phase0/kernelspace-driver/src/7-framebuffer` before working on the tinydrm_it8951. The reason for this is, to have a better understanding of the framebuffer driver first before I can confidently venture into the next level. The to-do list are listed on the `readme.md`
 

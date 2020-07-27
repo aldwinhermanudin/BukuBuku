@@ -1,4 +1,4 @@
-obj-m+=simple-fb.o
+obj-m+=fb-it8951.o
 
 
 all:
@@ -17,8 +17,8 @@ unload_rpi_overlay:
 	dtoverlay -R it8951
 
 unload_module:
-	rmmod simple-fb.ko
+	rmmod fb-it8951.ko
 
 load_module:
-	insmod simple-fb.ko
+	insmod fb-it8951.ko
 

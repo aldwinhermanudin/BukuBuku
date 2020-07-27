@@ -212,7 +212,9 @@ static inline u16 it8951_swab16(struct it8951_epd *epd, u16 data) {
 
 static int it8951_spi_transfer(struct it8951_epd *epd, uint16_t preamble, bool dummy, const void *tx, void *rx, uint32_t len) {
 	int speed_hz = epd->spi->max_speed_hz; // 12000000; // can't get it works at > 12Mhz
+#ifdef IT8951_DEBUG
 	int i;
+#endif
 	int ret;
 	u8 *txbuf = NULL, *rxbuf = NULL;
 	uint16_t spreamble = it8951_swab16(epd, preamble);
@@ -351,16 +353,6 @@ static void it8951_write_reg(struct it8951_epd *epd, uint16_t reg_addr, uint16_t
 	it8951_write_data(epd, value);
 }
 
-static void it8951_send_cmd_arg(struct it8951_epd *epd, uint16_t cmd_code, uint16_t* arg, uint16_t num_arg)
-{
-	uint16_t i;
-	it8951_write_cmd_code(epd, cmd_code);
-	for (i = 0; i < num_arg; i++)
-	{
-		it8951_write_data(epd, arg[i]);
-	}
-}
-
 static void it8951_load_img_start(struct it8951_epd *epd, struct it8951_load_img_info* load_img_info)
 {
 	uint16_t arg;
@@ -369,19 +361,6 @@ static void it8951_load_img_start(struct it8951_epd *epd, struct it8951_load_img
 	      | (load_img_info->rotate);
 	it8951_write_cmd_code(epd, IT8951_TCON_LD_IMG);
 	it8951_write_data(epd, arg);
-}
-
-static void it8951_load_img_area_start(struct it8951_epd *epd, struct it8951_load_img_info* load_img_info, struct it8951_area_img_info* area_img_info)
-{
-	uint16_t arg[5];
-	arg[0] = (load_img_info->endian_type << 8 )
-	         | (load_img_info->pixel_format << 4)
-	         | (load_img_info->rotate);
-	arg[1] = area_img_info->x;
-	arg[2] = area_img_info->y;
-	arg[3] = area_img_info->width;
-	arg[4] = area_img_info->height;
-	it8951_send_cmd_arg(epd, IT8951_TCON_LD_IMG_AREA, arg, 5);
 }
 
 static void it8951_load_img_end(struct it8951_epd *epd)
@@ -404,6 +383,16 @@ static void it8951_get_system_info(struct it8951_epd *epd)
 	PRINFO("FW version = %s\n", (uint8_t*)dev_info->fw_version);
 	PRINFO("LUT version = %s\n", (uint8_t*)dev_info->lut_version);
 }
+
+// static void it8951_print_system_info(struct it8951_epd *epd)
+// {
+// 	struct it8951_dev_info* dev_info = &epd->dev_info;
+
+// 	PRINFO("panel %dx%d\n",
+// 			dev_info->panel_w, dev_info->panel_h );
+// 	PRINFO("FW version = %s\n", (uint8_t*)dev_info->fw_version);
+// 	PRINFO("LUT version = %s\n", (uint8_t*)dev_info->lut_version);
+// }
 
 static void it8951_set_img_buf_base_addr(struct it8951_epd *epd, uint32_t base_addr)
 {
@@ -539,17 +528,17 @@ static int it8951_update_display(struct fb_info *info)
 {
 	struct it8951_epd *epd;
 	struct it8951_load_img_info load_img_info;
-	int i;
+	// int i;
 	PRINFO("entering %s()", __FUNCTION__);
 
 	epd = info->par;
 	PRINFO("frame size %d", info->fix.smem_len);
-	// device_write_data_buf(par, par->info->screen_base, par->info->fix.smem_len);
-	for (i = 0; i < 20; i++){
-		if (info->screen_base[i] != 0){
-			printk(KERN_INFO "%x at %d",  info->screen_base[i],i);
-		}
-	}
+	// development purposed
+	// for (i = 0; i < 20; i++){
+	// 	if (info->screen_base[i] != 0){
+	// 		printk(KERN_INFO "%x at %d",  info->screen_base[i],i);
+	// 	}
+	// }
 
 	it8951_xrgb8888_to_gray4(epd->ssbuf,info->screen_base, info);
 
@@ -588,8 +577,9 @@ void it8951_fb_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 	// more testing needs to be done on either using this or,
 	// ( comment continue after "schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);" )
 	PRINFO("entering %s()", __FUNCTION__);
-	int ret;
-	sys_fillrect(info, rect);
+	// int ret;
+	// it8951_print_system_info(info->par);
+	cfb_fillrect(info, rect);
 	schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);
 
 	// using this, preliminary test shows that kernel segfaults when using fbcon
@@ -603,8 +593,9 @@ void it8951_fb_copyarea(struct fb_info *info, const struct fb_copyarea *area)
 	// more testing needs to be done on either using this or,
 	// ( comment continue after "schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);" )
 	PRINFO("entering %s()", __FUNCTION__);
-	int ret;
-	sys_copyarea(info, area);
+	// int ret;
+	// it8951_print_system_info(info->par);
+	cfb_copyarea(info, area);
 	schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);
 
 	// using this, preliminary test shows that kernel segfaults when using fbcon
@@ -618,8 +609,9 @@ void it8951_fb_imageblit(struct fb_info *info, const struct fb_image *image)
 	// more testing needs to be done on either using this or,
 	// ( comment continue after "schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);" )
 	PRINFO("entering %s()", __FUNCTION__);
-	int ret;
-	sys_imageblit(info, image);
+	// int ret;
+	// it8951_print_system_info(info->par);
+	cfb_imageblit(info, image);
 	schedule_delayed_work(&info->deferred_work, info->fbdefio->delay);
 
 	// using this, preliminary test shows that kernel segfaults when using fbcon
@@ -679,9 +671,10 @@ static ssize_t it8951_fb_write(struct fb_info *info, const char __user *buf,
 
 static int it8951_fb_ioctl(struct fb_info *info, unsigned int cmd, unsigned long arg)
 {
+	struct it8951_epd *epd;
 	PRINFO("entering %s()", __FUNCTION__);
-	struct it8951_epd *epd = info->par;
-
+	
+	epd = info->par;
 	switch (cmd) {
 		case IT8951_FB_SET_SCREEN_SLEEP:
 			it8951_sleep(epd);

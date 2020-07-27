@@ -1,0 +1,47 @@
+diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
+index 260fce213..195e26416 100644
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -181,7 +181,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+ 	vga666.dtbo \
+ 	w1-gpio.dtbo \
+ 	w1-gpio-pullup.dtbo \
+-	wittypi.dtbo
++	wittypi.dtbo \
++	wseinkfb.dtbo
+ 
+ targets += dtbs dtbs_install
+ targets += $(dtbo-y)
+diff --git a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
+index 65478a7f7..8adfabd0b 100644
+--- a/drivers/video/fbdev/Kconfig
++++ b/drivers/video/fbdev/Kconfig
+@@ -2368,3 +2368,16 @@ config FB_RPISENSE
+ 
+ 	help
+ 	  This is the framebuffer driver for the Raspberry Pi Sense HAT
++
++config FB_WSEINK
++	tristate "Waveshare Eink SPI framebuffer"
++	depends on FB
++	select FB_SYS_FOPS
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	select FB_CFB_REV_PIXELS_IN_BYTE
++	select FB_DEFERRED_IO
++	#select SPI?
++	help
++	  This is the framebuffer driver for the SPI Waveshare Eink display.
+diff --git a/drivers/video/fbdev/Makefile b/drivers/video/fbdev/Makefile
+index aac19b4ff..d8b41bc31 100644
+--- a/drivers/video/fbdev/Makefile
++++ b/drivers/video/fbdev/Makefile
+@@ -126,6 +126,7 @@ obj-$(CONFIG_FB_PUV3_UNIGFX)      += fb-puv3.o
+ obj-$(CONFIG_FB_HYPERV)		  += hyperv_fb.o
+ obj-$(CONFIG_FB_OPENCORES)	  += ocfb.o
+ obj-$(CONFIG_FB_SM712)		  += sm712fb.o
++obj-$(CONFIG_FB_WSEINK)		  += wseinkfb.o
+ 
+ # Platform or fallback drivers go here
+ obj-$(CONFIG_FB_UVESA)            += uvesafb.o

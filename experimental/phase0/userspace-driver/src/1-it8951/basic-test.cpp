@@ -9,8 +9,6 @@
  * 
  */
 
-
-
 #include <bcm2835.h>
 #include <iostream>
 #include <vector>

@@ -12,8 +12,8 @@ Phase 0 is mainly PoC and early development of the e-paper display driver
 	- [x] create simple SPI driver ( for RTC chip or small e-paper display )
 	- [x] create simple character device driver using SPI ( for RTC chip or small e-paper display )
 	- [x] create simple character device driver using SPI for an e-paper display
-	- [ ] create simple framebuffer driver for an e-paper display
-	- [ ] create framebuffer driver for the an e-paper display
+	- [x] create simple framebuffer driver for an e-paper display
+	- [x] create framebuffer driver for the an e-paper display
 - [ ] test [fbpdf](https://github.com/aligrudi/fbpdf) on a framebuffer device
 	- [ ] test on TFT display
 	- [ ] test on e-paper display

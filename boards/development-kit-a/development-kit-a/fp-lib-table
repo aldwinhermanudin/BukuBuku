@@ -1,3 +1,0 @@
-(fp_lib_table
-  (lib (name Powerboost_1000C)(type KiCad)(uri ${KIPRJMOD}/Powerboost_1000C.pretty)(options "")(descr ""))
-)
